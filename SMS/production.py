@@ -1,21 +1,36 @@
 # imports necessary for functionality
 import requests
 import psycopg2 as pg
+def make_api_list(user_number,message,api_username,api_password):
+    # list of api we are using may change in futher also
+    api_list = ["https://enterprise.smsgupshup.com/GatewayAPI/rest?method=SendMessage&send_to="+str(user_number)+"&msg="+message+"&msg_type=TEXT&userid="+api_username+"&auth_scheme=plain&password="+api_password+"&v=1.1&format=text"]
+    return api_list
+
+# reading the config file
+file = open("creden.config",'r')
+text = file.readlines()
+d={}
+for j in text:
+    if j[0] != "#":
+        l=j.split(' = ')
+        if len(l)==2:
+            d[l[0].strip()]=l[1].strip()
+api_id,user,password,host,port,database= d['api_id'],d['user'],d['password'],d['host'],d['port'],d['database']
+api_username,api_password = d['api_username'],d['api_password']
+del d
+
+
 
 # Creating a Session for the Api Request 
 sess = requests.Session()
 
-# IMPORTANT : mention the Authentication credentials for gupshup api
-# In future it may change
-userid = "#####"
-password = "#####"
 
 # Connect to the Database
-connection = pg.connect(user="#####",
-                        password="####",
-                        host="#.#.#.#",
-                        port="####",
-                        database="####")
+connection = pg.connect(user=user,
+                        password=password,
+                        host=host,
+                        port=port,
+                        database=database)
 
 # Create the cursor to execute statements 
 cur = connection.cursor()
@@ -35,9 +50,7 @@ for i in range(len(details)):
         "make you a blessing for many. \n"+"With wishes and prayers,\n\n"+"From Karunya Family." 
     
     # requesting to gupshup for sending messages
-    req = "https://enterprise.smsgupshup.com/GatewayAPI/rest?method=SendMessage&send_to="\
-        +str(user_number)+"&msg="+message+"&msg_type=TEXT&userid="+userid+"&auth_scheme="\
-        "plain&password="+password+"&v=1.1&format=text"
+    req = make_api_list(user_number,message, api_username,api_password)[int(api_id)]
     a = sess.get(req)        
     sql1 = "insert into log(date,time,regno,name,status,phone_no) values(current_date"\
                 ",current_time,'%s','%s','%s','%s')"%(str(details[i][1]), str(details[i][0]),\
@@ -47,4 +60,3 @@ for i in range(len(details)):
 
 connection.commit()
 connection.close()
-
